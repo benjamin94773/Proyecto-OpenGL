@@ -104,12 +104,12 @@ public:
     //timer010 = 0.09; //for screenshot!
 
     glPushMatrix();
-	//glRotatef(timer010 * 360, 0.5, 1.0f, 0.1f);
-	//drawModel(0, 0, 0.0, 0.0, 0.0);
-	//drawModel(1, 0, 0.0, 0.0, 0.0);
-	drawModel(2, 1, 0.0, 0.0, 0.0);
-	//drawModel(3, 0, 0.0, 0.0, 0.0);
-	//drawModel(4, 1, 0.0, 0.0, 0.0);
+	glRotatef(timer010 * 360, 0.0f, 1.0f, 0.0f);
+	drawModel(0, 0, 0.0, 0.25, 1.0);
+	drawModel(1, 0, 0.0, 0.25, -0.25);
+	drawModel(2, 1, 0.0, 0.6, 1.25);
+	drawModel(3, 0, 0.0, 0.6, -0.25);
+	drawModel(4, 0, 0.0, 0.0, 0.0);
 	
 
 
@@ -139,10 +139,10 @@ public:
 
 		initModel();
 		loadOBJmodel(0, "./Mallas/volcan.obj");
-		loadOBJmodel(1, "./Mallas/torre.obj");
-		loadOBJmodel(2, "./Mallas/persona.obj");
-		loadOBJmodel(3, "./Mallas/ojo.obj");
-		loadOBJmodel(4, "./Mallas/mono.obj");
+		loadOBJmodel(1, "./Mallas/torre2.obj");
+		loadOBJmodel(2, "./Mallas/persona2.obj");
+		loadOBJmodel(3, "./Mallas/ojo2.obj");
+		loadOBJmodel(4, "./Mallas/mesa.obj");
 		
 
 		initialize_textures();
