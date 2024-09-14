@@ -11,6 +11,7 @@
 #include <time.h>
 #include "glm.h"
 #include <FreeImage.h> //*** Para Textura: Incluir librería
+#include "models.h"
 
 //-----------------------------------------------------------------------------
 
@@ -18,19 +19,21 @@
 class myWindow : public cwc::glutWindow
 {
 protected:
-   cwc::glShaderManager SM;
-   cwc::glShader* myShader[5];
-   GLuint ProgramObject;
-   clock_t time0,time1;
-   float timer010;  // timer counting 0->1->0
-   bool bUp;        // flag if counting up or down.
+	cwc::glShaderManager SM;
+	cwc::glShader* myShader[5];
+	GLuint ProgramObject;
+	clock_t time0, time1;
+	float timer010;  // timer counting 0->1->0
+	bool bUp;        // flag if counting up or down.
 
-   GLMmodel* myModel[5]; // arreglo de objetos.
-   GLuint texid; //*** Para Textura: variable que almacena el identificador de textura
+	models* volcan, * torre, * persona, * ojo, * mesa;
+
+	//GLMmodel* myModel[5]; // arreglo de objetos.
+	GLuint texid; //*** Para Textura: variable que almacena el identificador de textura
 
 
 public:
-	myWindow(){}
+	myWindow() {}
 
 	void loadShader(int ind, char* vertexFileName, char* fragmentFileName) {
 		myShader[ind] = SM.loadfromFile(vertexFileName, fragmentFileName); // load (and compile, link) from file
@@ -41,39 +44,12 @@ public:
 			ProgramObject = myShader[ind]->GetProgramObject();
 		}
 	}
-	void initModel(int n = 5) {
-		for (int i = 0; i < n; ++i) myModel[i] = NULL;
-	}
-	void loadOBJmodel(int ind, char* filePath) {
-		if (!myModel[ind])
-		{
-			myModel[ind] = glmReadOBJ(filePath);
-			if (!myModel[ind])
-				exit(0);
 
-			glmUnitize(myModel[ind]);
-			glmFacetNormals(myModel[ind]);
-			glmVertexNormals(myModel[ind], 90.0);
-		}
-	}
-
-	void drawModel(int model, int shader, float x, float y, float z) {
-		if (myShader[shader]) myShader[shader]->begin();
-		glPushMatrix();
-
-		glTranslatef(x, y, z);
-
-		if (shader) glBindTexture(GL_TEXTURE_2D, texid);
-
-		glmDraw(myModel[model], GLM_SMOOTH | GLM_MATERIAL | ((shader) ? GLM_TEXTURE : 0));
-
-		glPopMatrix();
-		if (myShader[shader]) myShader[shader]->end();
-	}
 
 	//*** Para Textura: aqui adiciono un método que abre la textura en JPG
-	void initialize_textures(void)
+	GLuint initialize_texture(char* fileName)
 	{
+		GLuint texid;
 		glGenTextures(1, &texid);
 		glBindTexture(GL_TEXTURE_2D, texid);
 		glTexEnvi(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -82,8 +58,8 @@ public:
 
 		// Loading JPG file
 		FIBITMAP* bitmap = FreeImage_Load(
-			FreeImage_GetFileType("./Mallas/mono.png", 0),
-			"./Mallas/mono.png");  //*** Para Textura: esta es la ruta en donde se encuentra la textura
+			FreeImage_GetFileType(fileName, 0),
+			fileName);  //*** Para Textura: esta es la ruta en donde se encuentra la textura
 
 		FIBITMAP* pImage = FreeImage_ConvertTo32Bits(bitmap);
 		int nWidth = FreeImage_GetWidth(pImage);
@@ -94,30 +70,30 @@ public:
 
 		FreeImage_Unload(pImage);
 		glEnable(GL_TEXTURE_2D);
+		return texid;
 	}
 
 
 	virtual void OnRender(void)
 	{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-    //timer010 = 0.09; //for screenshot!
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glPushMatrix();
-	glRotatef(timer010 * 360, 0.0f, 1.0f, 0.0f);
-	drawModel(0, 0, 0.0, 0.25, 1.0);
-	drawModel(1, 0, 0.0, 0.25, -0.25);
-	drawModel(2, 1, 0.0, 0.6, 1.25);
-	drawModel(3, 0, 0.0, 0.6, -0.25);
-	drawModel(4, 0, 0.0, 0.0, 0.0);
-	
+		//timer010 = 0.09; //for screenshot!
 
+		glPushMatrix();
+		glRotatef(timer010 * 360, 0.0f, 1.0f, 0.0f);
 
-    glutSwapBuffers();
-    glPopMatrix();
+		volcan->draw(0.0, 0.25, 1.0);
+		torre->draw(0.0, 0.25, -0.25);
+		persona->draw(0.0, 0.6, 1.25);
+		ojo->draw(0.0, 0.6, -0.25);
+		mesa->draw(0.0, 0.0, 0.0);
 
-    UpdateTimer();
-	Repaint();
+		glutSwapBuffers();
+		glPopMatrix();
+
+		UpdateTimer();
+		Repaint();
 	}
 
 	virtual void OnIdle() {}
@@ -137,84 +113,83 @@ public:
 		timer010 = 0.0f;
 		bUp = true;
 
-		initModel();
-		loadOBJmodel(0, "./Mallas/volcan.obj");
-		loadOBJmodel(1, "./Mallas/torre2.obj");
-		loadOBJmodel(2, "./Mallas/persona2.obj");
-		loadOBJmodel(3, "./Mallas/ojo2.obj");
-		loadOBJmodel(4, "./Mallas/mesa.obj");
-		
+		GLuint skin = initialize_texture("./Mallas/mono.png");
 
-		initialize_textures();
+		volcan = new models("./Mallas/volcan.obj", myShader[0], -1);
+		torre = new models("./Mallas/torre2.obj", myShader[0], -1);
+		persona = new models("./Mallas/persona2.obj", myShader[1], skin);
+		ojo = new models("./Mallas/ojo2.obj", myShader[0], -1);
+		mesa = new models("./Mallas/mesa.obj", myShader[0], -1);
+
 		DemoLight();
 
 	}
 
 	virtual void OnResize(int w, int h)
-   {
-      if(h == 0) h = 1;
-	   float ratio = 1.0f * (float)w / (float)h;
+	{
+		if (h == 0) h = 1;
+		float ratio = 1.0f * (float)w / (float)h;
 
-      glMatrixMode(GL_PROJECTION);
-	   glLoadIdentity();
-	
-	   glViewport(0, 0, w, h);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
 
-      gluPerspective(45,ratio,1,100);
-	   glMatrixMode(GL_MODELVIEW);
-	   glLoadIdentity();
-	   gluLookAt(0.0f,0.0f,4.0f, 
-		          0.0,0.0,-1.0,
-			       0.0f,1.0f,0.0f);
-   }
-	virtual void OnClose(void){}
-	virtual void OnMouseDown(int button, int x, int y) {}    
+		glViewport(0, 0, w, h);
+
+		gluPerspective(45, ratio, 1, 100);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		gluLookAt(0.0f, 0.0f, 4.0f,
+			0.0, 0.0, -1.0,
+			0.0f, 1.0f, 0.0f);
+	}
+	virtual void OnClose(void) {}
+	virtual void OnMouseDown(int button, int x, int y) {}
 	virtual void OnMouseUp(int button, int x, int y) {}
-	virtual void OnMouseWheel(int nWheelNumber, int nDirection, int x, int y){}
+	virtual void OnMouseWheel(int nWheelNumber, int nDirection, int x, int y) {}
 
 	virtual void OnKeyDown(int nKey, char cAscii)
-	{       
+	{
 		if (cAscii == 27) // 0x1b = ESC
 		{
 			this->Close(); // Close Window!
-		} 
+		}
 	};
 
 	virtual void OnKeyUp(int nKey, char cAscii)
 	{
-      if (cAscii == 's')      // s: Shader
-		  myShader[0]->enable();
-      else if (cAscii == 'f') // f: Fixed Function
-		  myShader[0]->disable();
+		if (cAscii == 's')      // s: Shader
+			myShader[0]->enable();
+		else if (cAscii == 'f') // f: Fixed Function
+			myShader[0]->disable();
 	}
 
-   void UpdateTimer()
-   {
-      time1 = clock();
-      float delta = static_cast<float>(static_cast<double>(time1-time0)/static_cast<double>(CLOCKS_PER_SEC));
-      delta = delta / 4;
-      if (delta > 0.00005f)
-      {
-         time0 = clock();
-         if (bUp)
-         {
-            timer010 += delta;
-            if (timer010>=1.0f) { timer010 = 1.0f; bUp = false;}
-         }
-         else
-         {
-            timer010 -= delta;
-            if (timer010<=0.0f) { timer010 = 0.0f; bUp = true;}
-         }
-      }
-   }
+	void UpdateTimer()
+	{
+		time1 = clock();
+		float delta = static_cast<float>(static_cast<double>(time1 - time0) / static_cast<double>(CLOCKS_PER_SEC));
+		delta = delta / 4;
+		if (delta > 0.00005f)
+		{
+			time0 = clock();
+			if (bUp)
+			{
+				timer010 += delta;
+				if (timer010 >= 1.0f) { timer010 = 1.0f; bUp = false; }
+			}
+			else
+			{
+				timer010 -= delta;
+				if (timer010 <= 0.0f) { timer010 = 0.0f; bUp = true; }
+			}
+		}
+	}
 
-   void DemoLight(void)
-   {
-     glEnable(GL_LIGHTING);
-     glEnable(GL_LIGHT0);
-     glEnable(GL_NORMALIZE);
-   }
+	void DemoLight(void)
+	{
+		glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHT0);
+		glEnable(GL_NORMALIZE);
+	}
 };
 
 //-----------------------------------------------------------------------------
@@ -222,14 +197,14 @@ public:
 class myApplication : public cwc::glApplication
 {
 public:
-	virtual void OnInit() {std::cout << "Hello World!\n"; }
+	virtual void OnInit() { std::cout << "Hello World!\n"; }
 };
 
 //-----------------------------------------------------------------------------
 
 int main(void)
 {
-	myApplication*  pApp = new myApplication;
+	myApplication* pApp = new myApplication;
 	myWindow* myWin = new myWindow();
 
 	pApp->run();
